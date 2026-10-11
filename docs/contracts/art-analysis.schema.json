@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://artxp.app/schemas/art-analysis/v1",
+  "title": "ArtXP Art Analysis v1",
+  "description": "Structured output produced after baseline vision analysis, specialist review, reconciliation, and coaching priority selection.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "artworkId",
+    "overallSummary",
+    "baseline",
+    "specialists",
+    "conflicts",
+    "priority",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "artworkId": { "type": "string", "minLength": 1 },
+    "overallSummary": { "type": "string", "minLength": 1, "maxLength": 1200 },
+    "baseline": { "$ref": "#/$defs/visualBaseline" },
+    "specialists": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "$ref": "#/$defs/specialistAnalysis" }
+    },
+    "conflicts": {
+      "type": "array",
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/findingConflict" }
+    },
+    "priority": {
+      "anyOf": [
+        { "$ref": "#/$defs/coachingPriority" },
+        { "type": "null" }
+      ]
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+    }
+  },
+  "$defs": {
+    "normalizedRegion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 },
+        "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+      }
+    },
+    "visualBaseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width",
+        "height",
+        "mediumGuess",
+        "styleContext",
+        "subjects",
+        "palette",
+        "lightDirection",
+        "regionsOfInterest",
+        "uncertainties"
+      ],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "mediumGuess": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "styleContext": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "subjects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": { "type": "string", "minLength": 1, "maxLength": 120 }
+        },
+        "palette": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["hex", "proportion"],
+            "properties": {
+              "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+              "proportion": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "lightDirection": { "type": ["string", "null"], "maxLength": 160 },
+        "regionsOfInterest": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label", "region"],
+            "properties": {
+              "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+              "region": { "$ref": "#/$defs/normalizedRegion" }
+            }
+          }
+        },
+        "uncertainties": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["criterionId", "claim", "evidence", "confidence", "region"],
+      "properties": {
+        "criterionId": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "claim": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "evidence": { "type": "string", "minLength": 1, "maxLength": 700 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "region": {
+          "anyOf": [
+            { "$ref": "#/$defs/normalizedRegion" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "criterionId",
+        "claim",
+        "evidence",
+        "confidence",
+        "region",
+        "severity",
+        "suggestedAction"
+      ],
+      "properties": {
+        "criterionId": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "claim": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "evidence": { "type": "string", "minLength": 1, "maxLength": 700 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "region": {
+          "anyOf": [
+            { "$ref": "#/$defs/normalizedRegion" },
+            { "type": "null" }
+          ]
+        },
+        "severity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "suggestedAction": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "specialistAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "skill",
+        "applicability",
+        "score",
+        "confidence",
+        "strengths",
+        "issues",
+        "uncertainties",
+        "rubricVersion"
+      ],
+      "properties": {
+        "skill": { "enum": ["anatomy", "composition", "lighting", "color"] },
+        "applicability": { "type": "number", "minimum": 0, "maximum": 1 },
+        "score": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "strengths": {
+          "type": "array",
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/finding" }
+        },
+        "issues": {
+          "type": "array",
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/issue" }
+        },
+        "uncertainties": {
+          "type": "array",
+          "maxItems": 12,
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+        },
+        "rubricVersion": { "type": "string", "minLength": 1, "maxLength": 100 }
+      }
+    },
+    "findingConflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["skills", "description", "resolution", "confidence"],
+      "properties": {
+        "skills": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "enum": ["anatomy", "composition", "lighting", "color"] }
+        },
+        "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "resolution": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "coachingPriority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "skill",
+        "criterionId",
+        "reason",
+        "evidence",
+        "priorityScore",
+        "confidence",
+        "watchItem"
+      ],
+      "properties": {
+        "skill": { "enum": ["anatomy", "composition", "lighting", "color"] },
+        "criterionId": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 700 },
+        "evidence": { "type": "string", "minLength": 1, "maxLength": 700 },
+        "priorityScore": { "type": "number", "minimum": 0, "maximum": 1 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "watchItem": { "type": ["string", "null"], "maxLength": 300 }
+      }
+    }
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://artxp.app/schemas/personalized-exercise/v1",
+  "title": "ArtXP Personalized Exercise v1",
+  "description": "A time-boxed exercise grounded in an analysis priority and retrieved knowledge.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "exerciseId",
+    "analysisId",
+    "title",
+    "rationale",
+    "skill",
+    "criterionId",
+    "durationMinutes",
+    "difficulty",
+    "materials",
+    "steps",
+    "successCriteria",
+    "commonFailureModes",
+    "rubric",
+    "variants",
+    "citations",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "exerciseId": { "type": "string", "minLength": 1 },
+    "analysisId": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "rationale": { "type": "string", "minLength": 1, "maxLength": 800 },
+    "skill": { "enum": ["anatomy", "composition", "lighting", "color"] },
+    "criterionId": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "durationMinutes": { "type": "integer", "minimum": 5, "maximum": 180 },
+    "difficulty": { "enum": ["beginner", "intermediate", "advanced"] },
+    "materials": {
+      "type": "array",
+      "maxItems": 12,
+      "items": { "type": "string", "minLength": 1, "maxLength": 120 }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["order", "instruction", "minutes"],
+        "properties": {
+          "order": { "type": "integer", "minimum": 1 },
+          "instruction": { "type": "string", "minLength": 1, "maxLength": 600 },
+          "minutes": { "type": "integer", "minimum": 1, "maximum": 180 }
+        }
+      }
+    },
+    "successCriteria": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": { "type": "string", "minLength": 1, "maxLength": 400 }
+    },
+    "commonFailureModes": {
+      "type": "array",
+      "maxItems": 8,
+      "items": { "type": "string", "minLength": 1, "maxLength": 400 }
+    },
+    "rubric": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterionId", "label", "description", "weight"],
+        "properties": {
+          "criterionId": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "weight": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "variants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["easier", "harder"],
+      "properties": {
+        "easier": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "harder": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "citations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["citationId", "supportedClaim"],
+        "properties": {
+          "citationId": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "supportedClaim": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 12,
+      "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+    }
+  }
+}
