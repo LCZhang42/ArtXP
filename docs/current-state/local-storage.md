@@ -1,42 +1,41 @@
-# Phase 0 browser storage inventory
+# Browser storage inventory after Phase 1
 
-Last verified: 2026-10-10
+Last verified: 2026-10-11
 
-All current durable application state is stored under the `artxp_` prefix in browser `localStorage`. This document freezes the current contract so later phases can migrate data intentionally.
+Phase 1 moved identity/profile data, practice entries, and new artwork bytes behind the authenticated API. The remaining `artxp_` keys are legacy or client-only state; they are not all long-term contracts.
 
 ## Keys
 
-| Key | Writer/readers | Shape | Migration destination |
-|---|---|---|---|
-| `artxp_user` | `AppContext`, onboarding, all authenticated routes | `{ goal, goalId, goalEmoji, skillLevel, dailyMinutes, createdAt }` | `users` + `user_profiles` |
-| `artxp_skills` | `AppContext`, dashboard, skill cards | Map keyed by skill: `{ name, level, xp }` | activity ledger plus future skill estimates |
-| `artxp_streak` | `AppContext`, dashboard, practice log | `{ count, lastDate }` using `Date.toDateString()` | immutable streak/activity events using user timezone |
-| `artxp_log` | `AppContext`, practice log | Array of `{ id, date, note, exercise, skill, image }`; `image` is a base64 data URL | `artworks`, `submissions`, and private object storage |
-| `artxp_plan` | `AppContext`, practice planner | Generated `{ goal, days[] }` object | exercises/learning plans with prompt and schema versions |
-| `artxp_settings` | `AppContext`, settings, model/reference callers | `{ geminiKey, pixabayKey }` | encrypted external credentials; never migrate silently |
-| `artxp_saved_refs` | `AppContext`, planner, reference finder | Array of Pixabay photo metadata plus `context` and `savedAt` | saved reference records |
-| `artxp_missions` | dashboard | `{ date, data[] }`, where date uses `Date.toDateString()` | daily exercise assignments |
-| `artxp_completed` | dashboard | `{ date, data: number[] }` containing mission indexes | immutable completion/XP events |
-| `artxp_plan_done` | practice planner | Object keyed by `"{dayIndex}-{exerciseIndex}"` with truthy values | exercise completion events |
+| Key | Phase 1 behavior | Destination / next action |
+|---|---|---|
+| `artxp_user` | Legacy read/import only; no new writes. Removed only after a successful user-approved profile import. | `users` + `user_profiles` |
+| `artxp_log` | Legacy export only; no new writes. New practice entries use the API and object storage. | `practice_entries` + `artworks` |
+| `artxp_skills` | Still read/written locally as activity XP. | Activity ledger; future skill estimates remain separate |
+| `artxp_streak` | Still read/written locally. | Server activity events using user timezone |
+| `artxp_plan` / `artxp_plan_done` | Still local. | Versioned learning plans and completion events |
+| `artxp_saved_refs` | Still local. | Saved reference records |
+| `artxp_missions` / `artxp_completed` | Still local. | Daily assignments and completion events |
+| `artxp_settings` | Still local and contains `{ geminiKey, pixabayKey }`. Explicitly excluded from legacy export. | Phase 2 OpenRouter/BYOK design; never migrate silently |
+
+## Credential audit
+
+The Settings form writes Gemini and Pixabay keys together as JSON under `artxp_settings` for the current browser origin. The keys are not in the repository, backend database, generated OpenAPI document, or legacy backup. Because any same-origin JavaScript can read `localStorage`, users should use limited development keys until Phase 2 replaces this design.
 
 ## Reset behavior
 
-`resetProgress()` removes all keys beginning with `artxp_`, resets the in-memory user, skills, streak, log, and plan, but does not explicitly reset the in-memory saved references before navigation. Later phases should replace this broad prefix deletion with an authenticated deletion workflow and clear client caches after server confirmation.
+“Reset all progress” now deletes the authenticated user's durable practice entries and their uploaded objects, clears the server profile, invalidates the relevant query caches, and clears `artxp_` browser state. Other users' data is excluded by ownership filters.
 
 ## Migration rules
 
-- Never upload stored provider keys during data migration. Ask users to reconnect OpenRouter and Pixabay through the new credential flow.
-- Ask for explicit permission before uploading browser-local artwork to the server.
-- Hash image bytes to deduplicate retries, but do not treat hashes as authorization.
-- Preserve original timestamps when they are parseable; mark ambiguous locale-derived dates as approximate.
-- Map existing XP to activity history only. Do not use it as evidence of skill ability.
-- Offer JSON export when an automatic migration cannot safely interpret a record.
+- Never upload stored provider keys during data migration.
+- Ask for explicit permission before importing browser-local profile or artwork data.
+- Hash image bytes to deduplicate retries, but never treat hashes as authorization.
+- Preserve original timestamps when parseable and mark ambiguous dates approximate.
+- Map legacy XP to activity history only, not artistic ability.
+- Offer a credential-free JSON export when automatic migration is unsafe.
 
-## Known limitations
+## Remaining limitations
 
-- `localStorage` is synchronous and quota-limited.
-- Any script executing on the same origin can read stored credentials and artwork.
-- Image data URLs cause significant storage expansion.
-- Index-based completion IDs become unstable if generated missions/plans are replaced.
-- Date strings depend on the browser locale/timezone and are not durable identifiers.
-- State has no schema version, ownership, concurrency control, or server backup.
+- `localStorage` is synchronous, quota-limited, and readable by any same-origin script.
+- Remaining local activity objects have no schema version, ownership, concurrency control, or server backup.
+- Locale-derived dates and index-based completion IDs are not durable identifiers.

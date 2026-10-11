@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.router import api_router
 from app.core.logging import configure_logging
@@ -34,6 +35,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = resolved_settings
     app.add_middleware(RequestIdMiddleware)
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=resolved_settings.session_secret,
+        session_cookie="artxp_oidc_state",
+        same_site="lax",
+        https_only=resolved_settings.session_cookie_secure,
+        max_age=600,
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=resolved_settings.cors_origins,

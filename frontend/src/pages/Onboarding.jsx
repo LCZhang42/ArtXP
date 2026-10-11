@@ -31,11 +31,19 @@ const STEPS = [
 ];
 
 export default function Onboarding() {
-  const { setUser } = useApp();
+  const {
+    setUser,
+    legacyProfile,
+    importLegacyProfile,
+    dismissLegacyProfile,
+    exportLegacyData,
+  } = useApp();
   const [step, setStep]               = useState(0);
   const [selectedGoal, setSelectedGoal]   = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [selectedTime, setSelectedTime]   = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   function canProceed() {
     if (step === 0) return selectedGoal !== null;
@@ -44,16 +52,23 @@ export default function Onboarding() {
     return false;
   }
 
-  function handleFinish() {
+  async function handleFinish() {
     const goal = GOALS.find(g => g.id === selectedGoal);
-    setUser({
-      goal:         goal.label,
-      goalId:       selectedGoal,
-      goalEmoji:    goal.emoji,
-      skillLevel:   selectedLevel,
-      dailyMinutes: selectedTime,
-      createdAt:    new Date().toISOString(),
-    });
+    setSaving(true);
+    setSaveError('');
+    try {
+      await setUser({
+        goal:         goal.label,
+        goalId:       selectedGoal,
+        goalEmoji:    goal.emoji,
+        skillLevel:   selectedLevel,
+        dailyMinutes: selectedTime,
+      });
+    } catch (error) {
+      setSaveError(error.message || 'Could not save your profile.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -68,6 +83,25 @@ export default function Onboarding() {
         <p className="text-slate-500 text-sm">Your personal art learning companion</p>
       </div>
 
+      {legacyProfile && (
+        <div className="w-full max-w-md mb-6 bg-slate-900 border border-violet-900/60 rounded-2xl p-4">
+          <p className="text-white text-sm font-semibold">Existing browser profile found</p>
+          <p className="text-slate-400 text-xs mt-1">
+            Import only your profile, download a credential-free backup, or keep it for later.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <button onClick={importLegacyProfile} className="bg-violet-600 text-white text-xs px-3 py-2 rounded-lg">
+              Import profile
+            </button>
+            <button onClick={exportLegacyData} className="bg-slate-800 text-slate-200 text-xs px-3 py-2 rounded-lg">
+              Download backup
+            </button>
+            <button onClick={dismissLegacyProfile} className="text-slate-500 text-xs px-2 py-2">
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex gap-2 mb-8">
         {STEPS.map((_, i) => (
           <div
@@ -174,7 +208,7 @@ export default function Onboarding() {
           {step < STEPS.length - 1 ? (
             <button
               onClick={() => setStep(s => s + 1)}
-              disabled={!canProceed()}
+              disabled={!canProceed() || saving}
               className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-violet-900/30"
             >
               Continue
@@ -183,14 +217,15 @@ export default function Onboarding() {
           ) : (
             <button
               onClick={handleFinish}
-              disabled={!canProceed()}
+              disabled={!canProceed() || saving}
               className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-violet-900/30"
             >
               <Sparkles size={15} />
-              Start Learning
+              {saving ? 'Saving…' : 'Start Learning'}
             </button>
           )}
         </div>
+        {saveError && <p className="text-red-400 text-xs mt-3 text-right">{saveError}</p>}
       </div>
     </div>
   );

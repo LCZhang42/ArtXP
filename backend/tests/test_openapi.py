@@ -8,3 +8,4 @@ def test_openapi_contains_phase_one_routes(client):
     assert "/api/v1/me/profile" in paths
     assert "/api/v1/artworks/upload-intents" in paths
     assert "/api/v1/artworks/{artwork_id}/complete-upload" in paths
+    assert "/api/v1/practice-entries" in paths

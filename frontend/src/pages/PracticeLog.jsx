@@ -19,24 +19,32 @@ function formatDate(iso) {
 }
 
 export default function PracticeLog() {
-  const { practiceLog, addPracticeEntry, streak } = useApp();
+  const { practiceLog, addPracticeEntry, practiceLoading, practiceError, streak } = useApp();
   const fileRef = useRef();
 
   const [note, setNote]             = useState('');
   const [exercise, setExercise]     = useState('');
   const [skill, setSkill]           = useState('gesture');
   const [previewImg, setPreviewImg] = useState(null);
-  const [imgData, setImgData]       = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [viewEntry, setViewEntry]   = useState(null);
   const [dragOver, setDragOver]     = useState(false);
 
   function readFile(file) {
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setSubmitError('Choose a JPEG, PNG, or WebP image.');
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setSubmitError('Images must be 20 MB or smaller.');
+      return;
+    }
+    setSelectedFile(file);
+    setSubmitError('');
     const reader = new FileReader();
-    reader.onload = ev => {
-      setPreviewImg(ev.target.result);
-      setImgData(ev.target.result);
-    };
+    reader.onload = ev => setPreviewImg(ev.target.result);
     reader.readAsDataURL(file);
   }
 
@@ -46,14 +54,23 @@ export default function PracticeLog() {
     readFile(e.dataTransfer.files?.[0]);
   }
 
-  function handleSubmit() {
-    if (!imgData && !note.trim()) return;
-    addPracticeEntry({ note, exercise, skill, image: imgData });
-    setNote('');
-    setExercise('');
-    setPreviewImg(null);
-    setImgData(null);
-    setSkill('gesture');
+  async function handleSubmit() {
+    if (!selectedFile && !note.trim()) return;
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      await addPracticeEntry({ note, exercise, skill, file: selectedFile });
+      setNote('');
+      setExercise('');
+      setPreviewImg(null);
+      setSelectedFile(null);
+      setSkill('gesture');
+      if (fileRef.current) fileRef.current.value = '';
+    } catch (error) {
+      setSubmitError(error.message || 'Could not save this practice entry.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const grouped = practiceLog.reduce((acc, entry) => {
@@ -118,7 +135,7 @@ export default function PracticeLog() {
                 className="w-full max-h-64 object-contain rounded-2xl"
               />
               <button
-                onClick={e => { e.stopPropagation(); setPreviewImg(null); setImgData(null); }}
+                onClick={e => { e.stopPropagation(); setPreviewImg(null); setSelectedFile(null); }}
                 className="absolute top-2.5 right-2.5 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition-colors"
               >
                 <X size={13} />
@@ -175,15 +192,20 @@ export default function PracticeLog() {
 
           <button
             onClick={handleSubmit}
-            disabled={!imgData && !note.trim()}
+            disabled={submitting || (!selectedFile && !note.trim())}
             className="w-full bg-violet-600 hover:bg-violet-700 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white py-2.5 rounded-xl font-semibold text-sm transition-all"
           >
-            Save Entry · +30 XP
+            {submitting ? 'Uploading…' : 'Save Entry · +30 XP'}
           </button>
+          {submitError && <p className="text-red-400 text-xs">{submitError}</p>}
         </div>
       </div>
 
-      {practiceLog.length > 0 ? (
+      {practiceLoading ? (
+        <div className="text-center py-10 text-slate-500 text-sm">Loading practice history…</div>
+      ) : practiceError ? (
+        <div className="text-center py-10 text-red-400 text-sm">Could not load practice history.</div>
+      ) : practiceLog.length > 0 ? (
         <div className="space-y-6">
           <h2 className="font-semibold text-white text-sm uppercase tracking-wider text-slate-400">
             History · {practiceLog.length} {practiceLog.length === 1 ? 'entry' : 'entries'}

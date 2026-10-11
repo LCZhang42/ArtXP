@@ -1,32 +1,24 @@
-# Phase 0 dependency audit disposition
+# Frontend dependency audit disposition
 
-Audit date: 2026-10-10  
+Audit date: 2026-10-11
 Runtime: Node.js 18.15.0 / npm 9.5.0
 
-## Results after non-breaking fixes
+## Current result
 
-- Full dependency tree: 15 findings — 7 moderate, 6 high, and 2 critical.
-- Production dependencies only: 2 moderate findings, both in the React Router 6 dependency chain.
+- Full dependency tree: 25 findings — 7 moderate, 16 high, and 2 critical.
+- The count increased after adding TypeScript, ESLint TypeScript support, TanStack Query, and the OpenAPI type generator; most findings remain in the Node 18-compatible development toolchain.
 - No `npm audit fix --force` was run.
+- `openapi-typescript` is pinned to `6.7.6`, the compatible line used with the current Node runtime.
 
-## Remaining production findings
+## Disposition
 
-React Router 6 is affected by open-redirect/XSS and SSR hydration advisories according to the npm audit result. The current application does not use React Router's SSR hydration APIs or navigate to user-controlled destinations, which limits exposure, but does not remove the dependency finding. npm proposes React Router 7 as a breaking fix.
+React Router 6 and the legacy Vite/Vitest/Tailwind toolchain require breaking upgrades for the available fixes. Current navigation targets are application-owned, and development servers must not be exposed to untrusted networks, but these constraints do not remove the findings.
 
-Disposition: migrate and test React Router 7 before any public production deployment. Keep all navigation destinations application-owned until then.
+Before public production deployment:
 
-## Remaining development-tool findings
+- Upgrade the project runtime to a currently supported Node LTS release.
+- Migrate and test Vite, Vitest, Tailwind, React Router, ESLint, TypeScript tooling, Playwright, and the OpenAPI generator as one isolated toolchain change.
+- Re-run the Phase 0/1 unit, contract, browser, and production-build suites.
+- Re-run `npm audit` and require zero critical/high production findings.
 
-The critical/high findings are transitive through the Node 18-compatible Vite 5, Vitest 2, and Tailwind 3 toolchain. The available npm fixes require breaking upgrades such as Vite 8, Vitest 5, and Tailwind 4; those releases also require a newer Node runtime in this environment.
-
-Disposition:
-
-- Do not expose Vite, Vitest UI, or other development servers to untrusted networks.
-- Run tests only against trusted repository code and fixtures.
-- Upgrade the project runtime to a supported Node 20+ LTS release before Phase 1 is deployed.
-- Perform Vite/Vitest/Tailwind/React Router upgrades as an isolated migration with the Phase 0 smoke suite as the safety net.
-- Re-run `npm audit` after that migration and require zero critical/high production findings before release.
-
-## Non-breaking updates applied
-
-`npm audit fix` updated packages allowed by existing semver ranges. Playwright was then pinned to `1.55.1`, the earliest patched release for its reported browser-download advisory and one that supports Node 18, because the newest automatically selected release required Node 20.
+Do not use `npm audit fix --force` on the current branch; it would mix breaking toolchain changes into the persistence milestone.

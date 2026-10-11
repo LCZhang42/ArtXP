@@ -14,6 +14,9 @@ This file is the concise decision index. Detailed decisions live in `docs/archit
 | D-0008 | 2026-10-11 | Accepted | Move the unchanged Vite app into `frontend/` before API integration | Keeps the mechanical repository change separate from TypeScript and persistence migrations |
 | D-0009 | 2026-10-11 | Accepted | Use a signed HTTP-only development session only in local development | Enables end-to-end API work without inventing password security; production identity remains an explicit provider decision |
 | D-0010 | 2026-10-11 | Accepted | Upload artwork bytes directly to private S3-compatible storage through short-lived presigned URLs | Keeps image bytes out of FastAPI, PostgreSQL, browser storage, and request logs |
+| D-0011 | 2026-10-11 | Accepted | Use provider-neutral OIDC Authorization Code + PKCE for production identity | Avoid coupling the application to one vendor; production fails closed until issuer/client configuration and secure cookies are supplied |
+| D-0012 | 2026-10-11 | Accepted | Generate frontend types from FastAPI OpenAPI and use TanStack Query for server state | Keeps the API contract reviewable and prevents browser-local profile/log data from becoming a second source of truth |
+| D-0013 | 2026-10-11 | Accepted | Never include `artxp_settings` in legacy export/import | Gemini and Pixabay keys remain local until Phase 2; credentials must not be silently copied into backups or server records |
 
 ## Decision rules
 

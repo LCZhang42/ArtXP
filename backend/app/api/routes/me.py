@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -11,6 +12,8 @@ router = APIRouter()
 
 class ProfilePatch(BaseModel):
     goal: str | None = Field(default=None, max_length=500)
+    goal_id: str | None = Field(default=None, max_length=64)
+    goal_emoji: str | None = Field(default=None, max_length=16)
     self_reported_level: str | None = Field(default=None, max_length=32)
     daily_minutes: int | None = Field(default=None, ge=5, le=480)
     medium_preferences: list[str] | None = None
@@ -21,6 +24,8 @@ class ProfileResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     goal: str | None
+    goal_id: str | None
+    goal_emoji: str | None
     self_reported_level: str | None
     daily_minutes: int | None
     medium_preferences: list[str]
@@ -32,6 +37,7 @@ class MeResponse(BaseModel):
     email: str
     locale: str
     timezone: str
+    created_at: datetime
     profile: ProfileResponse
 
 
@@ -45,6 +51,7 @@ def serialize_user(user: User) -> MeResponse:
         email=user.email,
         locale=user.locale,
         timezone=user.timezone,
+        created_at=user.created_at.isoformat(),
         profile=ProfileResponse.model_validate(profile),
     )
 

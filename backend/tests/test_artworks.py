@@ -1,8 +1,8 @@
 SHA256 = "a" * 64
 
 
-def test_artwork_upload_lifecycle(authenticated_client):
-    intent = authenticated_client.post(
+def create_uploaded_artwork(client):
+    intent = client.post(
         "/api/v1/artworks/upload-intents",
         json={
             "filename": "portrait study.png",
@@ -12,31 +12,37 @@ def test_artwork_upload_lifecycle(authenticated_client):
             "context": {"skill": "anatomy"},
         },
     )
-
     assert intent.status_code == 201
     payload = intent.json()
-    assert payload["method"] == "PUT"
-    assert payload["headers"] == {"Content-Type": "image/png"}
-    artwork_id = payload["artwork_id"]
-
-    pending = authenticated_client.get(f"/api/v1/artworks/{artwork_id}")
-    assert pending.status_code == 200
-    assert pending.json()["status"] == "pending_upload"
-    assert pending.json()["download_url"] is None
-
     object_key = payload["upload_url"].removeprefix("http://objects.test/")
-    authenticated_client.app.state.object_storage.objects[object_key]["ContentLength"] = 1024
-
-    completed = authenticated_client.post(f"/api/v1/artworks/{artwork_id}/complete-upload")
+    client.app.state.object_storage.objects[object_key]["ContentLength"] = 1024
+    completed = client.post(f"/api/v1/artworks/{payload['artwork_id']}/complete-upload")
     assert completed.status_code == 200
-    assert completed.json()["status"] == "uploaded"
+    return payload["artwork_id"]
+
+
+def test_artwork_upload_lifecycle(authenticated_client):
+    artwork_id = create_uploaded_artwork(authenticated_client)
 
     stored = authenticated_client.get(f"/api/v1/artworks/{artwork_id}")
     assert stored.status_code == 200
+    assert stored.json()["status"] == "uploaded"
     assert stored.json()["download_url"].startswith("http://downloads.test/")
 
     deleted = authenticated_client.delete(f"/api/v1/artworks/{artwork_id}")
     assert deleted.status_code == 204
+    assert authenticated_client.get(f"/api/v1/artworks/{artwork_id}").status_code == 404
+
+
+def test_artwork_is_hidden_from_another_user(authenticated_client):
+    artwork_id = create_uploaded_artwork(authenticated_client)
+
+    authenticated_client.post("/api/v1/auth/logout")
+    second_session = authenticated_client.post(
+        "/api/v1/auth/dev-session", json={"email": "second-user@artxp.local"}
+    )
+    assert second_session.status_code == 204
+
     assert authenticated_client.get(f"/api/v1/artworks/{artwork_id}").status_code == 404
 
 

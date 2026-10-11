@@ -2,56 +2,64 @@
 
 Last updated: 2026-10-11
 Current milestone: Phase 1 — Backend foundation and durable user data
-Overall state: in progress
+Overall state: implementation complete; external environment validation pending
 
-## Current objective
+## Phase 1 outcome
 
-Introduce durable server-side identity, profiles, and private artwork storage without breaking the verified Phase 0 frontend. The first foundation increment is complete; frontend API integration and data migration remain.
+ArtXP now has an authenticated FastAPI boundary, durable profiles and practice entries, private direct-to-object-storage artwork uploads, typed frontend API integration, and an explicit legacy-browser-data migration path. The frontend no longer creates new `artxp_user` or `artxp_log` records and no longer stores new artwork as base64.
 
 ## Phase 1 checklist
 
-- [x] Move the existing Vite application into `frontend/` without changing behavior.
-- [x] Create a FastAPI application with typed settings and generated OpenAPI.
-- [x] Add JSON logging, request IDs, liveness, and dependency-aware readiness.
-- [x] Add SQLAlchemy models and Alembic migration for users, profiles, and artworks.
+- [x] Move the Vite application into `frontend/` while preserving behavior.
+- [x] Create a FastAPI modular monolith with typed settings and generated OpenAPI.
+- [x] Add request IDs, JSON logging, liveness, and dependency-aware readiness.
+- [x] Add SQLAlchemy models and Alembic migrations for users, profiles, artworks, and practice entries.
 - [x] Add a signed HTTP-only development session that is disabled outside development.
-- [x] Implement `GET /me` and `PATCH /me/profile`.
-- [x] Implement private artwork upload-intent, completion, metadata, and deletion endpoints.
-- [x] Add PostgreSQL/pgvector, Redis, MinIO, and API services to Docker Compose.
-- [x] Add backend linting and API tests.
-- [ ] Select and integrate the production identity provider.
-- [ ] Run the full Compose topology against Docker.
-- [ ] Migrate the frontend incrementally to TypeScript, TanStack Query, and generated API types.
-- [ ] Connect onboarding/profile reads and writes to the authenticated API.
-- [ ] Replace new practice-log base64 writes with direct object-storage uploads.
-- [ ] Add a user-approved migration/export path for existing browser-local data.
-- [ ] Prove cross-session persistence and cross-user authorization against PostgreSQL/MinIO.
+- [x] Add standards-based production OIDC login/callback support with Authorization Code + PKCE and fail-closed production configuration.
+- [x] Implement authenticated profile and durable practice-entry APIs.
+- [x] Implement private artwork upload-intent, completion, download, and deletion contracts.
+- [x] Delete practice records and their owned objects when the user resets progress.
+- [x] Add PostgreSQL/pgvector, Redis, MinIO, API, and MinIO CORS services to Docker Compose.
+- [x] Add TanStack Query, incremental TypeScript, generated API types, and backend connection states.
+- [x] Connect onboarding/profile reads and writes to the authenticated API.
+- [x] Replace new practice-log base64 writes with direct object-storage uploads.
+- [x] Add user-approved legacy profile import and credential-free JSON export.
+- [x] Prove ownership isolation for artwork and practice records in API tests.
+- [ ] Provision a production OIDC tenant and configure its credentials in a deployment environment.
+- [ ] Run the full PostgreSQL/Redis/MinIO topology on a Docker-enabled machine.
+
+The unchecked items are environment provisioning/validation, not unfinished application code.
 
 ## Verification log
 
 | Date | Check | Result | Notes |
 |---|---|---|---|
-| 2026-10-11 | Backend Ruff | Passed | All application, migration, and test files clean |
-| 2026-10-11 | Backend Pytest | Passed | 7 API tests: health, request IDs, readiness, auth, profile, artwork lifecycle, limits, OpenAPI |
-| 2026-10-11 | Frontend `npm run verify` | Passed | ESLint clean; 6 tests passed; production build succeeded after move |
-| 2026-10-11 | Frontend `npm run test:e2e` | Passed | 6 Chromium route tests passed from `frontend/` |
-| 2026-10-11 | Alembic `upgrade head` | Passed | Initial schema applied to a disposable SQLite database |
-| 2026-10-11 | Compose YAML structure | Passed | Required services parsed; daemon execution unavailable |
+| 2026-10-11 | Backend Ruff | Passed | Application, migrations, scripts, and tests clean |
+| 2026-10-11 | Backend Pytest | Passed | 12 tests covering health, readiness, auth/profile, artwork lifecycle, practice persistence/reset, authorization, and OpenAPI |
+| 2026-10-11 | Frontend `npm run verify` | Passed | ESLint, TypeScript, 7 unit/contract tests, and production build |
+| 2026-10-11 | Frontend `npm run test:e2e` | Passed | 6 Chromium routes, including deep-link authentication bootstrap |
+| 2026-10-11 | Alembic `upgrade head` | Passed | Migrations `0001` and `0002` applied to a disposable empty SQLite database |
+| 2026-10-11 | Compose YAML structure | Passed | Required services, public MinIO endpoint, and CORS bootstrap parsed |
 | 2026-10-11 | Docker Compose runtime | Not run | Docker is not installed on this machine |
+| 2026-10-11 | Live production OIDC | Not run | Requires a provisioned provider tenant and credentials |
 
-## Current known risks
+## Credential/storage audit
 
-- The frontend is not connected to the API yet; its current user data and images remain browser-local.
-- The development session is deliberately not production authentication. A hosted identity provider or reviewed authentication library must replace it before deployment.
-- Compose syntax and service contracts are present, but the PostgreSQL/Redis/MinIO integration needs a Docker-enabled verification environment.
-- Upload completion verifies object size and declared MIME metadata; magic-byte decoding, pixel limits, EXIF stripping, derivatives, malware policy, and abandoned-upload cleanup remain.
-- Gemini and Pixabay credentials remain in `localStorage` until Phase 2.
-- Dependency audit findings remain documented in `docs/current-state/dependency-audit.md`; do not use `npm audit fix --force`.
+- No real Gemini, Pixabay, OpenRouter, or OIDC credentials were found in tracked project files.
+- `.env.example` files contain examples only; local `.env` files remain ignored.
+- Legacy Gemini and Pixabay keys are stored together in browser `localStorage` under `artxp_settings` when the user saves them.
+- The legacy JSON export explicitly excludes `artxp_settings`, and a unit test verifies secrets are absent.
+- Provider-key migration and OpenRouter BYOK belong to Phase 2.
 
-## Next implementation increment
+## Known risks carried forward
 
-1. Choose the production identity provider and document the session contract.
-2. Generate a typed frontend client from FastAPI OpenAPI.
-3. Add TanStack Query and migrate onboarding/profile persistence to `/me`.
-4. Integrate the practice-log upload flow with presigned object-storage URLs.
-5. Add explicit browser-data import/export consent and cross-user integration tests.
+- Gemini/Pixabay browser keys remain readable by JavaScript until Phase 2 replaces the model path and designs encrypted BYOK handling.
+- XP, streaks, plans, saved references, and mission completion are still legacy activity state in browser storage; they are not evidence-based skill progression.
+- Compose contracts are present, but PostgreSQL/Redis/MinIO integration still needs a Docker-enabled verification environment.
+- Upload completion validates declared size and MIME metadata; byte decoding, pixel limits, EXIF stripping, derivatives, malware policy, and abandoned-upload cleanup remain future hardening.
+- The current Node 18-compatible frontend toolchain has documented audit findings and must be upgraded before public production deployment.
+- Authlib/Starlette currently emit an upstream httpx-to-httpx2 deprecation warning during tests; it is non-failing but should be tracked during dependency upgrades.
+
+## Next milestone
+
+Phase 2 starts the OpenRouter model gateway and multimodal analysis slice: secure user-provided-key handling, model capability routing, upload-to-analysis flow, structured schemas, retries/timeouts, and quality/cost/latency telemetry.

@@ -21,9 +21,9 @@ export default function Settings() {
     setTimeout(() => setSaved(false), 2500);
   }
 
-  function handleReset() {
+  async function handleReset() {
     if (confirmReset) {
-      resetProgress();
+      await resetProgress();
     } else {
       setConfirmReset(true);
       setTimeout(() => setConfirmReset(false), 4000);
@@ -95,7 +95,7 @@ export default function Settings() {
             </button>
           </div>
           <p className="text-xs text-slate-600 mt-1.5">
-            Powers daily mission generation & practice plans. Uses <code className="text-slate-500">gemini-3.1-flash-lite</code> (free tier).
+            Legacy direct Gemini integration. Stored only in this browser until the Phase 2 OpenRouter migration.
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export default function Settings() {
             </button>
           </div>
           <p className="text-xs text-slate-600 mt-1.5">
-            Powers the Reference Finder. Free tier: 500 requests/hour. Includes photos, illustrations &amp; anatomy renders.
+            Powers the Reference Finder. Stored only in this browser and excluded from migration exports.
           </p>
         </div>
 

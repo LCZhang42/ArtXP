@@ -1,6 +1,32 @@
-import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
+import { renderWithQuery } from '../test/render';
 import { AppProvider, useApp } from './AppContext';
+
+vi.mock('../api/client', () => ({
+  bootstrapCurrentUser: vi.fn().mockResolvedValue({
+    id: 'user-1',
+    email: 'developer@artxp.local',
+    locale: 'en',
+    timezone: 'UTC',
+    created_at: '2026-10-11T00:00:00+00:00',
+    profile: {
+      goal: null,
+      goal_id: null,
+      goal_emoji: null,
+      self_reported_level: null,
+      daily_minutes: null,
+      medium_preferences: [],
+      style_preferences: [],
+    },
+  }),
+  createPracticeEntry: vi.fn(),
+  deletePracticeEntries: vi.fn(),
+  listPracticeEntries: vi.fn().mockResolvedValue([]),
+  updateProfile: vi.fn(),
+}));
 
 function SkillProbe() {
   const { skills, completeExercise } = useApp();
@@ -20,7 +46,7 @@ function SkillProbe() {
 describe('AppContext progression', () => {
   it('levels a skill and persists the updated state', async () => {
     const user = userEvent.setup();
-    render(
+    renderWithQuery(
       <AppProvider>
         <SkillProbe />
       </AppProvider>,

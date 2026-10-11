@@ -1,15 +1,52 @@
 import { expect, test } from '@playwright/test';
 
-const TEST_USER = {
-  goal: 'Portraits',
-  goalId: 'portraits',
-  goalEmoji: '👤',
-  skillLevel: 'beginner',
-  dailyMinutes: 30,
-  createdAt: '2026-10-10T00:00:00.000Z',
+const EMPTY_PROFILE = {
+  goal: null,
+  goal_id: null,
+  goal_emoji: null,
+  self_reported_level: null,
+  daily_minutes: null,
+  medium_preferences: [],
+  style_preferences: [],
 };
 
+const TEST_PROFILE = {
+  ...EMPTY_PROFILE,
+  goal: 'Portraits',
+  goal_id: 'portraits',
+  goal_emoji: '👤',
+  self_reported_level: 'beginner',
+  daily_minutes: 30,
+};
+
+async function mockPhaseOneApi(page, profile) {
+  await page.route('**/api/v1/**', async route => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (path === '/api/v1/me' && request.method() === 'GET') {
+      return route.fulfill({
+        json: {
+          id: 'e2e-user',
+          email: 'e2e@artxp.local',
+          locale: 'en',
+          timezone: 'UTC',
+          created_at: '2026-10-11T00:00:00+00:00',
+          profile,
+        },
+      });
+    }
+    if (path === '/api/v1/practice-entries' && request.method() === 'GET') {
+      return route.fulfill({ json: [] });
+    }
+    if (path === '/api/v1/auth/dev-session') {
+      return route.fulfill({ status: 204 });
+    }
+    return route.fulfill({ status: 404, json: { detail: 'Not mocked' } });
+  });
+}
+
 test('onboarding renders for a new visitor', async ({ page }) => {
+  await mockPhaseOneApi(page, EMPTY_PROFILE);
   await page.goto('/');
 
   await expect(
@@ -23,9 +60,7 @@ test('onboarding renders for a new visitor', async ({ page }) => {
 
 test.describe('existing-user routes', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(user => {
-      window.localStorage.setItem('artxp_user', JSON.stringify(user));
-    }, TEST_USER);
+    await mockPhaseOneApi(page, TEST_PROFILE);
   });
 
   const routes = [

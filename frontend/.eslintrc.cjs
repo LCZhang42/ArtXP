@@ -13,6 +13,7 @@ module.exports = {
     'node_modules',
     'playwright-report',
     'test-results',
+    'src/api/schema.d.ts',
   ],
   parserOptions: {
     ecmaVersion: 'latest',
@@ -38,11 +39,27 @@ module.exports = {
   },
   overrides: [
     {
+      files: ['**/*.{ts,tsx}'],
+      parser: '@typescript-eslint/parser',
+      parserOptions: {
+        project: './tsconfig.json',
+        tsconfigRootDir: __dirname,
+      },
+      plugins: ['@typescript-eslint'],
+      rules: {
+        'no-unused-vars': 'off',
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          { argsIgnorePattern: '^_' },
+        ],
+      },
+    },
+    {
       files: [
         '*.config.js',
         '*.config.cjs',
         'e2e/**/*.js',
-        'src/**/*.test.jsx',
+        'src/**/*.test.{js,jsx}',
         'src/test/**/*.js',
       ],
       env: {
