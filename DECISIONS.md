@@ -11,10 +11,13 @@ This file is the concise decision index. Detailed decisions live in `docs/archit
 | D-0005 | 2026-10-10 | Accepted | Keep the knowledge graph in PostgreSQL initially | Shallow prerequisites and related-concept traversal do not yet justify another database |
 | D-0006 | 2026-10-11 | Accepted | Initialize Git in this directory and use `main` as the baseline branch | Project owner created `LCZhang42/ArtXP`; milestone commits and isolated worktrees can now be used |
 | D-0007 | 2026-10-10 | Accepted | Do not force major dependency upgrades during the behavior-preserving baseline | Remaining audit findings are documented and block production until a tested Node/toolchain migration |
+| D-0008 | 2026-10-11 | Accepted | Move the unchanged Vite app into `frontend/` before API integration | Keeps the mechanical repository change separate from TypeScript and persistence migrations |
+| D-0009 | 2026-10-11 | Accepted | Use a signed HTTP-only development session only in local development | Enables end-to-end API work without inventing password security; production identity remains an explicit provider decision |
+| D-0010 | 2026-10-11 | Accepted | Upload artwork bytes directly to private S3-compatible storage through short-lived presigned URLs | Keeps image bytes out of FastAPI, PostgreSQL, browser storage, and request logs |
 
 ## Decision rules
 
 - Record choices that affect architecture, security, data ownership, external contracts, or migration cost.
 - Include alternatives and consequences in an ADR for material decisions.
 - Do not store credentials, provider keys, or private endpoints in decision records.
-- Reference the decision ID in implementation pull requests or milestone notes once Git is available.
+- Reference the decision ID in implementation pull requests or milestone notes.

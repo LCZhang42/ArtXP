@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const contractsDir = path.resolve(currentDir, '../../docs/contracts');
+const contractsDir = path.resolve(currentDir, '../../../docs/contracts');
 
 function readContract(filename) {
   return JSON.parse(

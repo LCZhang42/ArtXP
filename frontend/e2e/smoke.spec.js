@@ -16,7 +16,7 @@ test('onboarding renders for a new visitor', async ({ page }) => {
     page.getByRole('heading', { name: 'What do you want to draw?' }),
   ).toBeVisible();
   await page.screenshot({
-    path: 'docs/screenshots/onboarding.png',
+    path: '../docs/screenshots/onboarding.png',
     fullPage: true,
   });
 });
@@ -41,7 +41,7 @@ test.describe('existing-user routes', () => {
       await page.goto(route.path);
       await expect(page.getByRole('heading', { name: route.heading })).toBeVisible();
       await page.screenshot({
-        path: `docs/screenshots/${route.file}.png`,
+        path: `../docs/screenshots/${route.file}.png`,
         fullPage: true,
       });
     });

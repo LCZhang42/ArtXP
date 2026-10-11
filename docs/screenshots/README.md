@@ -12,6 +12,7 @@ The Playwright smoke suite writes one full-page screenshot for onboarding and ea
 Regenerate them with:
 
 ```powershell
+cd frontend
 npm run test:e2e
 ```
 

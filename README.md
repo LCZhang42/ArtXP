@@ -1,64 +1,87 @@
 # ArtXP
 
-ArtXP is a React/Vite prototype for personalized art practice. The current app supports onboarding, daily AI missions, weekly plans, Pixabay reference discovery, practice uploads, XP, streaks, and local progress tracking.
+ArtXP is evolving from a browser-only art-practice prototype into a multimodal learning system. The current UI supports onboarding, daily missions, weekly plans, Pixabay reference discovery, practice uploads, XP, streaks, and local progress tracking. Phase 1 adds a durable FastAPI boundary, profile persistence, and private object-storage upload contracts.
 
-The production upgrade is specified in [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md). Current milestone progress is recorded in [STATUS.md](./STATUS.md), and durable architectural choices are recorded in [DECISIONS.md](./DECISIONS.md).
+The production target is specified in [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md). Current progress is in [STATUS.md](./STATUS.md), and durable choices are in [DECISIONS.md](./DECISIONS.md).
 
-## Current architecture
+## View the current app
 
-- React 18 and React Router
-- Vite 5
-- Tailwind CSS 3
-- Direct browser calls to Gemini and Pixabay
-- Browser `localStorage` for all user data and settings
-
-This is the Phase 0 baseline, not the intended production architecture. In later phases, FastAPI, PostgreSQL/pgvector, Redis, private object storage, and an OpenRouter model gateway will replace browser-only persistence and direct model calls.
-
-## Prerequisites
-
-- Node.js 18.15 or later in the Node 18 line
-- npm 9 or later
-- Chromium installed through Playwright for end-to-end tests
-
-## Setup
+The frontend works now; the backend is not required to explore the existing prototype.
 
 ```powershell
+cd frontend
 npm install
-npx playwright install chromium
-Copy-Item .env.example .env
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Open `http://localhost:5173`. The prototype asks for Gemini and Pixabay keys in Settings for its legacy AI/reference features. Use only development keys with limited quota because those legacy keys remain in browser storage until Phase 2.
 
-No environment variables are required in Phase 0. The prototype currently asks users to enter Gemini and Pixabay keys in Settings. Those keys are stored in browser storage; use only development keys with limited quota. Phase 2 removes this legacy credential path.
+## Test the frontend
 
-## Commands
+```powershell
+cd frontend
+npm run verify
+npm run test:e2e
+```
 
-| Command | Purpose |
-|---|---|
-| `npm run dev` | Start the Vite development server |
-| `npm run build` | Create a production frontend build |
-| `npm run preview` | Serve the production build locally |
-| `npm run lint` | Run ESLint over JavaScript and JSX |
-| `npm run test` | Run Vitest component and contract tests once |
-| `npm run test:watch` | Run Vitest in watch mode |
-| `npm run test:e2e` | Run Playwright route smoke tests and refresh screenshots |
-| `npm run verify` | Run lint, unit tests, and production build |
+`verify` runs ESLint, six unit/contract tests, and a production build. The Playwright suite checks onboarding and all five existing-user routes.
 
-## Browser smoke tests and screenshots
+## Run the backend without Docker
 
-Playwright covers onboarding and all five existing-user routes. It seeds only the minimum local user fixture and does not call Gemini or Pixabay. Passing runs write baseline images to [`docs/screenshots`](./docs/screenshots/README.md).
+Python 3.12–3.14 is supported. This mode uses a local SQLite database and does not require Redis or object storage for health/profile testing.
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload
+```
+
+Open:
+
+- API documentation: `http://localhost:8000/docs`
+- Liveness: `http://localhost:8000/api/v1/health`
+- Readiness: `http://localhost:8000/api/v1/ready`
+
+Create the local-only signed development session with `POST /api/v1/auth/dev-session`. That endpoint returns an HTTP-only cookie and is disabled when `ARTXP_ENVIRONMENT` is not `development`.
+
+Run backend checks with:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m pytest
+```
+
+## Run the Phase 1 infrastructure
+
+Install Docker Desktop first, then run:
+
+```powershell
+docker compose up --build
+```
+
+This starts:
+
+- PostgreSQL 16 with pgvector on port 5432
+- Redis on port 6379
+- private MinIO object storage on ports 9000/9001
+- FastAPI on port 8000
+
+Run the Vite frontend separately from `frontend/` for fast refresh. The Compose topology is defined but has not been daemon-tested on this machine because Docker is not installed.
 
 ## Repository map
 
 ```text
-src/                         React application
-e2e/                         Playwright browser smoke tests
+frontend/                    React/Vite application and browser tests
+backend/app/                 FastAPI modular-monolith application
+backend/migrations/          Alembic database migrations
+backend/tests/               API and persistence tests
 docs/architecture/adr/       Architecture decision records
 docs/contracts/              Versioned AI output JSON Schemas
-docs/current-state/          Phase 0 implementation inventory
+docs/current-state/          Baseline implementation inventory
 docs/screenshots/            Browser-generated UI baseline
+docker-compose.yml           PostgreSQL, Redis, MinIO, and API
 IMPLEMENTATION_PLAN.md       Product and technical roadmap
 STATUS.md                    Live milestone status and verification
 DECISIONS.md                 Durable decision index
@@ -66,15 +89,11 @@ DECISIONS.md                 Durable decision index
 
 ## Current limitations
 
-- There is no real account authentication.
-- All durable data is browser-local.
-- Uploaded practice images are stored as base64 in `localStorage`.
-- Gemini and Pixabay keys are stored in `localStorage` and used directly by browser code.
-- AI JSON is prompt-shaped rather than schema-enforced by an API boundary.
+- The frontend still uses browser-local state and has not yet been connected to the Phase 1 API.
+- The signed development session is only a local bootstrap mechanism, not production identity.
+- New practice-log images still use base64 browser storage until the upload API is integrated.
+- Gemini and Pixabay keys still use browser storage until the OpenRouter gateway work in Phase 2.
 - XP represents activity and is not yet evidence-based skill progression.
+- Production infrastructure and access-control integration still require Docker-backed verification.
 
 See [the local storage inventory](./docs/current-state/local-storage.md) for migration details.
-
-## Working agreement
-
-Implement one milestone at a time. Treat `IMPLEMENTATION_PLAN.md` as the target, `STATUS.md` as the current truth, and `DECISIONS.md`/ADRs as the record of choices. Run `npm run verify` after each frontend milestone and repair failures before moving on.
