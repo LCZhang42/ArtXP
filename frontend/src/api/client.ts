@@ -11,6 +11,8 @@ export type UploadIntentRequest =
   components['schemas']['UploadIntentRequest'];
 export type UploadIntentResponse =
   components['schemas']['UploadIntentResponse'];
+export type VisionTestResponse =
+  components['schemas']['VisionTestResponse'];
 
 export interface NewPracticeEntry {
   note: string;
@@ -35,7 +37,11 @@ async function apiRequest<T>(
   init: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(init.headers);
-  if (init.body && !headers.has('Content-Type')) {
+  if (
+    init.body &&
+    !(init.body instanceof FormData) &&
+    !headers.has('Content-Type')
+  ) {
     headers.set('Content-Type', 'application/json');
   }
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -167,5 +173,23 @@ export async function createPracticeEntry(
       skill: entry.skill,
       practiced_at: entry.practicedAt ?? null,
     }),
+  });
+}
+export async function testOpenRouterVision({
+  apiKey,
+  model,
+  image,
+}: {
+  apiKey: string;
+  model: string;
+  image: File;
+}): Promise<VisionTestResponse> {
+  const form = new FormData();
+  form.append('image', image);
+  if (model.trim()) form.append('model', model.trim());
+  return apiRequest<VisionTestResponse>('/model-gateway/vision-test', {
+    method: 'POST',
+    headers: { 'X-OpenRouter-Key': apiKey.trim() },
+    body: form,
   });
 }

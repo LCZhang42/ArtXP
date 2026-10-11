@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     oidc_client_secret: str | None = None
     oidc_redirect_uri: str | None = None
 
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_vision_model: str = "google/gemini-3.8-flash"
+    openrouter_timeout_seconds: float = 60.0
+    vision_test_max_upload_bytes: int = 8 * 1024 * 1024
+
     database_url: str = "sqlite+aiosqlite:///./artxp.db"
     redis_url: str = "redis://localhost:6379/0"
     s3_endpoint_url: str = "http://localhost:9000"

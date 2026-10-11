@@ -1,65 +1,83 @@
 # ArtXP Implementation Status
 
 Last updated: 2026-10-11
-Current milestone: Phase 1 — Backend foundation and durable user data
-Overall state: implementation complete; external environment validation pending
+Current milestone: Phase 2 — OpenRouter BYOK gateway
+Overall state: Phase 1 complete; Phase 2 in progress
 
-## Phase 1 outcome
+## Phase 1 — Complete
 
-ArtXP now has an authenticated FastAPI boundary, durable profiles and practice entries, private direct-to-object-storage artwork uploads, typed frontend API integration, and an explicit legacy-browser-data migration path. The frontend no longer creates new `artxp_user` or `artxp_log` records and no longer stores new artwork as base64.
+ArtXP has an authenticated FastAPI boundary, SQLite-backed durable profiles and practice entries, private S3-compatible artwork contracts, generated frontend API types, and a user-approved legacy-data migration path.
 
-## Phase 1 checklist
+Phase 1 implementation and local automated verification are complete. Docker/MinIO runtime validation is explicitly deferred and is not a Phase 1 blocker. When durable artwork storage becomes necessary, the project will evaluate a hosted S3-compatible free tier instead of requiring local Docker.
 
-- [x] Move the Vite application into `frontend/` while preserving behavior.
-- [x] Create a FastAPI modular monolith with typed settings and generated OpenAPI.
-- [x] Add request IDs, JSON logging, liveness, and dependency-aware readiness.
-- [x] Add SQLAlchemy models and Alembic migrations for users, profiles, artworks, and practice entries.
-- [x] Add a signed HTTP-only development session that is disabled outside development.
-- [x] Add standards-based production OIDC login/callback support with Authorization Code + PKCE and fail-closed production configuration.
-- [x] Implement authenticated profile and durable practice-entry APIs.
-- [x] Implement private artwork upload-intent, completion, download, and deletion contracts.
-- [x] Delete practice records and their owned objects when the user resets progress.
-- [x] Add PostgreSQL/pgvector, Redis, MinIO, API, and MinIO CORS services to Docker Compose.
-- [x] Add TanStack Query, incremental TypeScript, generated API types, and backend connection states.
-- [x] Connect onboarding/profile reads and writes to the authenticated API.
-- [x] Replace new practice-log base64 writes with direct object-storage uploads.
-- [x] Add user-approved legacy profile import and credential-free JSON export.
-- [x] Prove ownership isolation for artwork and practice records in API tests.
-- [ ] Provision a production OIDC tenant and configure its credentials in a deployment environment.
-- [ ] Run the full PostgreSQL/Redis/MinIO topology on a Docker-enabled machine.
+### Phase 1 verification
 
-The unchecked items are environment provisioning/validation, not unfinished application code.
+- Backend Ruff passed.
+- 12 Phase 1 backend tests passed.
+- Frontend lint, TypeScript, 7 tests, and production build passed.
+- 6 Chromium route tests passed.
+- Alembic migrations `0001` and `0002` applied from an empty SQLite database.
+- Compose structure was validated; its runtime was not executed.
 
-## Verification log
+## Phase 2 — In progress
 
-| Date | Check | Result | Notes |
-|---|---|---|---|
-| 2026-10-11 | Backend Ruff | Passed | Application, migrations, scripts, and tests clean |
-| 2026-10-11 | Backend Pytest | Passed | 12 tests covering health, readiness, auth/profile, artwork lifecycle, practice persistence/reset, authorization, and OpenAPI |
-| 2026-10-11 | Frontend `npm run verify` | Passed | ESLint, TypeScript, 7 unit/contract tests, and production build |
-| 2026-10-11 | Frontend `npm run test:e2e` | Passed | 6 Chromium routes, including deep-link authentication bootstrap |
-| 2026-10-11 | Alembic `upgrade head` | Passed | Migrations `0001` and `0002` applied to a disposable empty SQLite database |
-| 2026-10-11 | Compose YAML structure | Passed | Required services, public MinIO endpoint, and CORS bootstrap parsed |
-| 2026-10-11 | Docker Compose runtime | Not run | Docker is not installed on this machine |
-| 2026-10-11 | Live production OIDC | Not run | Requires a provisioned provider tenant and credentials |
+Phase 2 is starting on SQLite and does not require Redis, PostgreSQL, MinIO, or Docker.
+
+### Completed first slice
+
+- [x] Add a centralized backend OpenRouter client.
+- [x] Add an authenticated, storage-independent vision test endpoint.
+- [x] Accept JPEG, PNG, and WebP images up to 8 MB in memory for the isolated test.
+- [x] Send private/local images to OpenRouter as base64 image inputs.
+- [x] Request and validate a strict structured response.
+- [x] Return model, token/cost usage when supplied, and end-to-end latency.
+- [x] Keep the OpenRouter key, image, and result out of SQLite, object storage, API responses, logs, and `localStorage`.
+- [x] Add a Settings UI for running the isolated vision test with a user-provided key.
+- [x] Add API tests for authentication, MIME validation, ephemeral handling, key non-echo, and upstream errors.
+
+### Phase 2 verification
+
+- Backend Ruff passed.
+- 17 backend tests passed, including 5 model-gateway tests.
+- Frontend lint, TypeScript, 8 unit/contract tests, and production build passed.
+- 6 Chromium route tests passed with the new Settings UI.
+- A live OpenRouter request was not run because no user key was supplied; this remains the next manual check.
+### Remaining Phase 2 work
+
+- [ ] Test one real vision request with a user-provided OpenRouter key and image.
+- [ ] Implement OpenRouter OAuth PKCE connection.
+- [ ] Design encrypted manual-key persistence with a development key abstraction and production KMS; do not persist keys before this is ready.
+- [ ] Add connect/status/disconnect APIs and UI.
+- [ ] Add route policies, safe retries, fallbacks, redaction, and durable usage telemetry.
+- [ ] Move daily missions and weekly plans from direct Gemini browser calls to backend structured endpoints.
+- [ ] Remove Gemini keys from browser storage after migration/explicit user confirmation.
+- [ ] Add user cost, privacy, and model preferences.
+
+## Infrastructure/storage decision
+
+- Default development database: SQLite.
+- Local Docker stack: optional and deferred.
+- Durable artwork storage: deferred until an analysis workflow needs it.
+- Hosted shortlist: Cloudflare R2, Backblaze B2, and Supabase Storage.
+- Preliminary fit: Cloudflare R2, because it is S3-compatible and currently includes 10 GB-month, 1 million Class A operations, 10 million Class B operations, and free internet egress on its Standard free tier. No provider has been selected or provisioned yet.
+- Research record: `docs/research/hosted-object-storage.md`.
 
 ## Credential/storage audit
 
-- No real Gemini, Pixabay, OpenRouter, or OIDC credentials were found in tracked project files.
-- `.env.example` files contain examples only; local `.env` files remain ignored.
-- Legacy Gemini and Pixabay keys are stored together in browser `localStorage` under `artxp_settings` when the user saves them.
-- The legacy JSON export explicitly excludes `artxp_settings`, and a unit test verifies secrets are absent.
-- Provider-key migration and OpenRouter BYOK belong to Phase 2.
+- No real Gemini, Pixabay, OpenRouter, or OIDC credentials are tracked in the repository.
+- Legacy Gemini/Pixabay keys remain in browser `localStorage` under `artxp_settings` until their Phase 2 migration.
+- The OpenRouter vision-test key exists only in React component memory and one request path through FastAPI to OpenRouter; ArtXP does not persist or echo it. Production must use HTTPS; plain HTTP is acceptable only on localhost during development.
+- Legacy exports explicitly exclude `artxp_settings`.
 
 ## Known risks carried forward
 
-- Gemini/Pixabay browser keys remain readable by JavaScript until Phase 2 replaces the model path and designs encrypted BYOK handling.
-- XP, streaks, plans, saved references, and mission completion are still legacy activity state in browser storage; they are not evidence-based skill progression.
-- Compose contracts are present, but PostgreSQL/Redis/MinIO integration still needs a Docker-enabled verification environment.
-- Upload completion validates declared size and MIME metadata; byte decoding, pixel limits, EXIF stripping, derivatives, malware policy, and abandoned-upload cleanup remain future hardening.
-- The current Node 18-compatible frontend toolchain has documented audit findings and must be upgraded before public production deployment.
-- Authlib/Starlette currently emit an upstream httpx-to-httpx2 deprecation warning during tests; it is non-failing but should be tracked during dependency upgrades.
+- A real OpenRouter call can incur model charges; the test UI displays the chosen model and returns provider usage/cost data when available.
+- The isolated endpoint temporarily base64-encodes the image in backend memory; it is deliberately limited to 8 MB and is not the production upload/analysis path.
+- Legacy Gemini/Pixabay keys remain readable by same-origin JavaScript until migration.
+- XP, streaks, plans, saved references, and mission completion remain browser-local activity state.
+- Hosted storage terms and free-tier limits can change and must be rechecked before provisioning.
+- The Node 18-compatible frontend toolchain retains documented audit findings.
 
-## Next milestone
+## Next action
 
-Phase 2 starts the OpenRouter model gateway and multimodal analysis slice: secure user-provided-key handling, model capability routing, upload-to-analysis flow, structured schemas, retries/timeouts, and quality/cost/latency telemetry.
+Run the app with SQLite, paste a limited OpenRouter key into the new Settings test, select a non-sensitive drawing, and make one real vision request. After connectivity and structured output are confirmed, implement OpenRouter OAuth PKCE and encrypted credential handling before routing product features through the gateway.

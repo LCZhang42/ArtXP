@@ -57,6 +57,33 @@
         "title": "ArtworkResponse",
         "type": "object"
       },
+      "Body_test_vision_api_v1_model_gateway_vision_test_post": {
+        "properties": {
+          "image": {
+            "contentMediaType": "application/octet-stream",
+            "description": "One JPEG, PNG, or WebP image",
+            "title": "Image",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          }
+        },
+        "required": [
+          "image"
+        ],
+        "title": "Body_test_vision_api_v1_model_gateway_vision_test_post",
+        "type": "object"
+      },
       "DevSessionRequest": {
         "properties": {
           "email": {
@@ -535,6 +562,93 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "VisionAnalysis": {
+        "properties": {
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/VisionObservation"
+            },
+            "maxItems": 4,
+            "title": "Observations",
+            "type": "array"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "observations"
+        ],
+        "title": "VisionAnalysis",
+        "type": "object"
+      },
+      "VisionObservation": {
+        "properties": {
+          "area": {
+            "enum": [
+              "anatomy",
+              "composition",
+              "lighting",
+              "color",
+              "other"
+            ],
+            "title": "Area",
+            "type": "string"
+          },
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "observation": {
+            "title": "Observation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "area",
+          "observation",
+          "confidence"
+        ],
+        "title": "VisionObservation",
+        "type": "object"
+      },
+      "VisionTestResponse": {
+        "properties": {
+          "analysis": {
+            "$ref": "#/components/schemas/VisionAnalysis"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "persisted": {
+            "default": false,
+            "title": "Persisted",
+            "type": "boolean"
+          },
+          "usage": {
+            "additionalProperties": true,
+            "title": "Usage",
+            "type": "object"
+          }
+        },
+        "required": [
+          "analysis",
+          "model",
+          "usage",
+          "latency_ms"
+        ],
+        "title": "VisionTestResponse",
+        "type": "object"
       }
     }
   },
@@ -883,6 +997,59 @@
         "summary": "Update Profile",
         "tags": [
           "me"
+        ]
+      }
+    },
+    "/api/v1/model-gateway/vision-test": {
+      "post": {
+        "operationId": "test_vision_api_v1_model_gateway_vision_test_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-OpenRouter-Key",
+            "required": true,
+            "schema": {
+              "minLength": 10,
+              "title": "X-Openrouter-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_test_vision_api_v1_model_gateway_vision_test_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisionTestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Vision",
+        "tags": [
+          "model-gateway"
         ]
       }
     },

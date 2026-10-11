@@ -17,6 +17,9 @@ This file is the concise decision index. Detailed decisions live in `docs/archit
 | D-0011 | 2026-10-11 | Accepted | Use provider-neutral OIDC Authorization Code + PKCE for production identity | Avoid coupling the application to one vendor; production fails closed until issuer/client configuration and secure cookies are supplied |
 | D-0012 | 2026-10-11 | Accepted | Generate frontend types from FastAPI OpenAPI and use TanStack Query for server state | Keeps the API contract reviewable and prevents browser-local profile/log data from becoming a second source of truth |
 | D-0013 | 2026-10-11 | Accepted | Never include `artxp_settings` in legacy export/import | Gemini and Pixabay keys remain local until Phase 2; credentials must not be silently copied into backups or server records |
+| D-0014 | 2026-10-11 | Accepted | Declare Phase 1 implementation complete without Docker runtime validation | SQLite and automated tests cover current development; Docker/MinIO is optional validation, not a milestone gate |
+| D-0015 | 2026-10-11 | Accepted | Start Phase 2 on SQLite with an ephemeral OpenRouter vision test | Validates BYOK, multimodal input, schemas, latency, and usage without waiting for durable image storage |
+| D-0016 | 2026-10-11 | Proposed | Prefer hosted S3-compatible object storage over local Docker when durable images become necessary | Cloudflare R2 is the preliminary fit; recheck R2, B2, and Supabase limits and privacy before provisioning |
 
 ## Decision rules
 

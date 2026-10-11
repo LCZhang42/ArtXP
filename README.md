@@ -1,6 +1,6 @@
 # ArtXP
 
-ArtXP is evolving from a browser-only art-practice prototype into a multimodal learning system. Phase 1 adds an authenticated FastAPI boundary, durable profiles and practice logs, and private direct-to-object-storage artwork uploads.
+ArtXP is evolving from a browser-only art-practice prototype into a multimodal learning system. Phase 1 is complete. Phase 2 has started with an SQLite-compatible, storage-independent OpenRouter vision test.
 
 The production target is in [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md). Current progress is in [STATUS.md](./STATUS.md), and durable choices are in [DECISIONS.md](./DECISIONS.md).
 
@@ -31,15 +31,25 @@ Useful backend endpoints:
 - Liveness: `http://localhost:8000/api/v1/health`
 - Readiness: `http://localhost:8000/api/v1/ready`
 
-## Run the full infrastructure
+## Test OpenRouter vision without Docker
 
-Install Docker Desktop, copy `.env.example` to `.env` if overrides are needed, then run:
+Start the SQLite backend and frontend using the commands above, open Settings, and use **Phase 2 · OpenRouter vision test**:
+
+1. Paste a limited OpenRouter API key.
+2. Keep or change the model identifier.
+3. Select a non-sensitive JPEG, PNG, or WebP image up to 8 MB.
+4. Run one test and review the structured observations, latency, model, and usage.
+
+The key, image, and result are kept in memory only and are not stored by ArtXP. The request can still incur OpenRouter/model charges. The test defaults to `google/gemini-3.8-flash`; model availability and pricing can change, so check OpenRouter before testing.
+## Optional full infrastructure
+
+Docker is not required for current development. If you later want to validate the local PostgreSQL/Redis/MinIO topology, install Docker Desktop, copy `.env.example` to `.env`, then run:
 
 ```powershell
 docker compose up --build
 ```
 
-This starts PostgreSQL 16 with pgvector, Redis, private MinIO storage, its CORS bootstrap job, and FastAPI. Run Vite separately from `frontend/`. The Compose topology has been structurally validated but has not been daemon-tested on this machine because Docker is unavailable here.
+This starts PostgreSQL 16 with pgvector, Redis, private MinIO storage, its CORS bootstrap job, and FastAPI. Run Vite separately from `frontend/`. The Compose topology has been structurally validated but runtime validation is deferred. Hosted S3-compatible storage will be evaluated before Docker is required.
 
 ## Production identity
 

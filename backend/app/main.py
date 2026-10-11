@@ -10,6 +10,7 @@ from app.core.logging import configure_logging
 from app.core.settings import Settings, get_settings
 from app.db.session import Database
 from app.middleware.request_id import RequestIdMiddleware
+from app.model_gateway.openrouter import OpenRouterGateway
 from app.storage.s3 import ObjectStorage
 
 
@@ -22,6 +23,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         database = Database(resolved_settings.database_url)
         app.state.database = database
         app.state.object_storage = ObjectStorage(resolved_settings)
+        app.state.model_gateway = OpenRouterGateway(resolved_settings)
         if resolved_settings.auto_create_schema:
             await database.create_schema()
         yield

@@ -47,6 +47,10 @@ export interface paths {
     /** Update Profile */
     patch: operations["update_profile_api_v1_me_profile_patch"];
   };
+  "/api/v1/model-gateway/vision-test": {
+    /** Test Vision */
+    post: operations["test_vision_api_v1_model_gateway_vision_test_post"];
+  };
   "/api/v1/practice-entries": {
     /** List Entries */
     get: operations["list_entries_api_v1_practice_entries_get"];
@@ -88,6 +92,16 @@ export interface components {
       size_bytes: number;
       /** Status */
       status: string;
+    };
+    /** Body_test_vision_api_v1_model_gateway_vision_test_post */
+    Body_test_vision_api_v1_model_gateway_vision_test_post: {
+      /**
+       * Image
+       * @description One JPEG, PNG, or WebP image
+       */
+      image: string;
+      /** Model */
+      model?: string | null;
     };
     /** DevSessionRequest */
     DevSessionRequest: {
@@ -248,6 +262,42 @@ export interface components {
       msg: string;
       /** Error Type */
       type: string;
+    };
+    /** VisionAnalysis */
+    VisionAnalysis: {
+      /** Observations */
+      observations: components["schemas"]["VisionObservation"][];
+      /** Summary */
+      summary: string;
+    };
+    /** VisionObservation */
+    VisionObservation: {
+      /**
+       * Area
+       * @enum {string}
+       */
+      area: "anatomy" | "composition" | "lighting" | "color" | "other";
+      /** Confidence */
+      confidence: number;
+      /** Observation */
+      observation: string;
+    };
+    /** VisionTestResponse */
+    VisionTestResponse: {
+      analysis: components["schemas"]["VisionAnalysis"];
+      /** Latency Ms */
+      latency_ms: number;
+      /** Model */
+      model: string;
+      /**
+       * Persisted
+       * @default false
+       */
+      persisted?: boolean;
+      /** Usage */
+      usage: {
+        [key: string]: unknown;
+      };
     };
   };
   responses: never;
@@ -436,6 +486,33 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["MeResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Test Vision */
+  test_vision_api_v1_model_gateway_vision_test_post: {
+    parameters: {
+      header: {
+        "X-OpenRouter-Key": string;
+      };
+    };
+    requestBody: {
+      content: {
+        "multipart/form-data": components["schemas"]["Body_test_vision_api_v1_model_gateway_vision_test_post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["VisionTestResponse"];
         };
       };
       /** @description Validation Error */

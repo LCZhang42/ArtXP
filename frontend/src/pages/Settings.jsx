@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import OpenRouterVisionTest from '../components/OpenRouterVisionTest';
 import { Settings as SettingsIcon, Key, Eye, EyeOff, RotateCcw, ExternalLink, Check } from 'lucide-react';
 
 export default function Settings() {
@@ -40,6 +41,8 @@ export default function Settings() {
         <p className="text-slate-400 text-sm mt-1">API keys and account options</p>
       </div>
 
+      <OpenRouterVisionTest />
+
       {user && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Your Profile</h2>
@@ -60,7 +63,7 @@ export default function Settings() {
       )}
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-5">
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">API Keys</h2>
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Legacy API Keys</h2>
 
         <div>
           <div className="flex items-center justify-between mb-2">
